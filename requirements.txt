@@ -1,2 +1,6 @@
 owlready2
 rdflib
+pandas
+numpy
+sklearn
+pykeen
