@@ -7,7 +7,7 @@ from pykeen.pipeline import pipeline
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train embeddings.')
+    parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", type=str, default='data/carcinogenesis.tsv',
                         help='3 column tsv file, one line for each triple')
     parser.add_argument("--result_path", type=str, default='embeddings')
