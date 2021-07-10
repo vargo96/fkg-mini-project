@@ -52,7 +52,7 @@ def run(args):
                               hyp_optim=args.hyper_optim)
 
     # TODO: Loop through lps and write the result file
-    lp = lps[23]
+    lp = lps[0]
     if args.train_mode:
         executor.fit_and_evaluate(lp)
     else:

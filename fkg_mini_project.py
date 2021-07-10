@@ -140,17 +140,17 @@ class FKGMiniProject:
 
     def __select_classifier(self):
         if self.model_name == 'LR':
-            classifier = LogisticRegression()
+            classifier = LogisticRegression(class_weight='balanced')
         elif self.model_name == 'SVM':
-            classifier = SVC()
+            classifier = SVC(class_weight='balanced')
         elif self.model_name == 'RandomForest':
-            classifier = RandomForestClassifier()
+            classifier = RandomForestClassifier(class_weight='balanced')
         elif self.model_name == 'kNN':
             classifier = KNeighborsClassifier()
         elif self.model_name == 'MLP':
             classifier = MLPClassifier()
         elif self.model_name == 'Perceptron':
-            classifier = Perceptron()
+            classifier = Perceptron(class_weight='balanced')
         else:
             raise ValueError
         return classifier
