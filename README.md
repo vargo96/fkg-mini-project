@@ -4,7 +4,7 @@
 Clone the repository:
 
 ```
-https://github.com/vargo96/fkg-mini-project.git
+git clone https://github.com/vargo96/fkg-mini-project.git
 ```
 You might want to create a virtual environment:
 ```
