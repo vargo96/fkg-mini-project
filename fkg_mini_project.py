@@ -56,6 +56,15 @@ class FKGMiniProject:
         self.embeddings = pd.read_csv(embedding_path, index_col=0)
         self.model_name = model_name
         self.classifier = self.__select_classifier()
+        self.hyp_optim = hyp_optim
+
+    def fit(self, X, y):
+        self.classifier.fit(X, y)
+        return self
+
+    def predict(self, X):
+        y_pred = self.classifier.predict(X)
+        return y_pred
 
     def fit_and_evaluate(self, lp):
         X, y = self._get_X_y_from_lp(lp)
@@ -74,7 +83,38 @@ class FKGMiniProject:
         else:
             model = self.fit(X, y)
 
-        # TODO: Find remaining individuals and predict
+        # Complete: Find remaining individuals and predict
+
+        instances = set()
+        for c in self.onto.classes():
+            # print(f"\t {c.name}")
+            instances.update(c.instances(world=self.onto.world))
+
+        print('Total instances: ' + str(len(instances)))
+
+        instances = {str(instance).replace('carcinogenesis.', '') for instance in instances}
+        lp_instance_set = set(lp['pos'] + lp['neg'])
+        print('Total instances in LP ' + lp['lp'] + ': ' + str(len(lp_instance_set)))
+
+        test_instances = instances - lp_instance_set
+        print('Test instances for LP ' + lp['lp'] + ': ' + str(len(test_instances)))
+
+        test_instances = list(test_instances)
+        X_test = self._get_X_from_lp_test(test_instances)
+        y_test = self.predict(X_test)
+
+        return test_instances, y_test
+
+    def _get_X_from_lp_test(self, lp_test):
+        X = np.zeros((len(lp_test), len(self.embeddings.columns)))
+
+        index = 0
+
+        for inst in lp_test:
+            X[index] = self.embeddings.loc[str(FKGMiniProject.NS_CAR) + inst]
+            index += 1
+
+        return X
 
     def _get_X_y_from_lp(self, lp):
         X = np.zeros((len(lp['pos']) + len(lp['neg']), len(self.embeddings.columns)))
@@ -162,6 +202,7 @@ class FKGMiniProject:
         for c in self.onto.classes():
             print(f"\t {c.name}")
             instances.update(c.instances(world=self.onto.world))
+        # print(str(list(instances)[0]).replace('carcinogenesis.', ''))
         print(f"Number object properties: {len(list(self.onto.object_properties()))}")
         for p in self.onto.object_properties():
             print(f"\t {p.name}")

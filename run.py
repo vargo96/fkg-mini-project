@@ -10,10 +10,12 @@ def parse_args():
     parser.add_argument("--lps_path", type=str, default='data/kg-mini-project-grading.ttl')
     parser.add_argument("--classifier", type=str, default='LR',
                         help='Available classifiers: LR, SVM, RandomForest, kNN, MLP, Perceptron')
-    parser.add_argument("--train_mode", type=bool, default=True,
+    # Changed --train_mode default False for testing
+    parser.add_argument("--train_mode", type=bool, default=False,
                         help='False: Train on given lps and predict remaining individuals \
                               - True: 10-Fold CV on lps')
-    parser.add_argument("--hyper_optim", type=bool, default=True,
+    # Changed --hyper_optim default False for testing
+    parser.add_argument("--hyper_optim", type=bool, default=False,
                         help='Optimize hyperparameters')
     parser.add_argument("--output_file", type=str, default='result.ttl')
 
@@ -51,12 +53,16 @@ def run(args):
                               model_name=args.classifier,
                               hyp_optim=args.hyper_optim)
 
+    # executor.log_ontology()
+
     # TODO: Loop through lps and write the result file
     lp = lps[0]
     if args.train_mode:
         executor.fit_and_evaluate(lp)
     else:
-        executor.fit_and_predict(lp)
+        test_instances, y_test = executor.fit_and_predict(lp)
+        # print(len(test_instances))
+        # print(len(y_test))
 
 if __name__ == '__main__':
     run(parse_args())
