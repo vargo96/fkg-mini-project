@@ -10,13 +10,10 @@ def parse_args():
     parser.add_argument("--lps_path", type=str, default='data/kg-mini-project-grading.ttl')
     parser.add_argument("--classifier", type=str, default='LR',
                         help='Available classifiers: LR, SVM, RandomForest, kNN, MLP, Perceptron')
-    # Changed --train_mode default False for testing
-    parser.add_argument("--train_mode", type=bool, default=False,
-                        help='False: Train on given lps and predict remaining individuals \
-                              - True: 10-Fold CV on lps')
-    # Changed --hyper_optim default False for testing
-    parser.add_argument("--hyper_optim", type=bool, default=False,
-                        help='Optimize hyperparameters')
+    parser.add_argument("--train_mode", action='store_true',
+                        help='Set train mode: Run 10-Fold CV on the given learning problems.')
+    parser.add_argument("--hyper_optim", action='store_true',
+                        help='Optimize hyperparameters before fitting.')
     parser.add_argument("--output_file", type=str, default='result.ttl')
 
     return parser.parse_args()
@@ -31,12 +28,14 @@ def parse_lps(lps_path):
             elif line.strip().startswith("lpprop:excludesResource"):
                 exclude_resource_list = line.strip()[23:].split(",")
                 exclude_resource_list = [individual.replace(";", "")
-                                         .replace("carcinogenesis:", "").strip()
+                                         .replace("carcinogenesis:", 
+                                                  "http://dl-learner.org/carcinogenesis#").strip()
                                         for individual in exclude_resource_list]
             elif line.strip().startswith("lpprop:includesResource"):
                 include_resource_list = line.strip()[23:].split(",")
                 include_resource_list = [individual.replace(".", "")
-                                         .replace("carcinogenesis:", "").strip()
+                                         .replace("carcinogenesis:", 
+                                                  "http://dl-learner.org/carcinogenesis#").strip()
                                         for individual in include_resource_list]
                 lp_instance_list.append({"lp": lp_key,
                                          "pos": include_resource_list,
@@ -48,21 +47,18 @@ def parse_lps(lps_path):
 def run(args):
     lps = parse_lps(args.lps_path)
 
-    executor = FKGMiniProject(args.ontology_path,
+    project = FKGMiniProject(args.ontology_path,
                               args.embeddings_path,
                               model_name=args.classifier,
                               hyp_optim=args.hyper_optim)
 
-    # executor.log_ontology()
 
     # TODO: Loop through lps and write the result file
-    lp = lps[0]
+    lp = lps[23]
     if args.train_mode:
-        executor.fit_and_evaluate(lp)
+        project.fit_and_evaluate(lp)
     else:
-        test_instances, y_test = executor.fit_and_predict(lp)
-        # print(len(test_instances))
-        # print(len(y_test))
+        test_instances, y_test = project.fit_and_predict(lp)
 
 if __name__ == '__main__':
     run(parse_args())

@@ -29,10 +29,9 @@ python run.py
 Some additional usage information for the train script and embedding script:
 
 ```
-usage: run.py [-h] [--ontology_path ONTOLOGY_PATH]
-              [--embeddings_path EMBEDDINGS_PATH] [--lps_path LPS_PATH]
-              [--classifier CLASSIFIER] [--train_mode TRAIN_MODE]
-              [--hyper_optim HYPER_OPTIM] [--output_file OUTPUT_FILE]
+usage: run.py [-h] [--ontology_path ONTOLOGY_PATH] [--embeddings_path EMBEDDINGS_PATH]
+              [--lps_path LPS_PATH] [--classifier CLASSIFIER] [--train_mode] [--hyper_optim]
+              [--output_file OUTPUT_FILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -41,13 +40,9 @@ optional arguments:
   --embeddings_path EMBEDDINGS_PATH
   --lps_path LPS_PATH
   --classifier CLASSIFIER
-                        Available classifiers: LR, SVM, RandomForest, kNN,
-                        MLP, Perceptron
-  --train_mode TRAIN_MODE
-                        False: Train on given lps and predict remaining
-                        individuals - True: 10-Fold CV on lps
-  --hyper_optim HYPER_OPTIM
-                        Optimize hyperparameters
+                        Available classifiers: LR, SVM, RandomForest, kNN, MLP, Perceptron
+  --train_mode          Set train mode: Run 10-Fold CV on the given learning problems.
+  --hyper_optim         Optimize hyperparameters before fitting.
   --output_file OUTPUT_FILE
 ```
 

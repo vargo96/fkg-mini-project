@@ -55,84 +55,66 @@ class FKGMiniProject:
         self.onto = World().get_ontology(ontology_path).load()
         self.embeddings = pd.read_csv(embedding_path, index_col=0)
         self.model_name = model_name
-        self.classifier = self.__select_classifier()
         self.hyp_optim = hyp_optim
+        self.classifier = self.__select_classifier()
+        self.all_instances = self.__get_instances()
 
-    def fit(self, X, y):
-        self.classifier.fit(X, y)
-        return self
+    def __select_classifier(self):
+        if self.model_name == 'LR':
+            classifier = LogisticRegression(class_weight='balanced')
+        elif self.model_name == 'SVM':
+            classifier = SVC(class_weight='balanced')
+        elif self.model_name == 'RandomForest':
+            classifier = RandomForestClassifier(class_weight='balanced')
+        elif self.model_name == 'kNN':
+            classifier = KNeighborsClassifier()
+        elif self.model_name == 'MLP':
+            classifier = MLPClassifier()
+        elif self.model_name == 'Perceptron':
+            classifier = Perceptron(class_weight='balanced')
+        else:
+            raise ValueError
+        return classifier
 
-    def predict(self, X):
-        y_pred = self.classifier.predict(X)
-        return y_pred
+    def __get_instances(self):
+        instances = set()
+        for c in self.onto.classes():
+            instances.update([ind.iri for ind in c.instances(world=self.onto.world)])
+        return instances
 
     def fit_and_evaluate(self, lp):
-        X, y = self._get_X_y_from_lp(lp)
+        X = self._get_X(lp['pos'] + lp['neg'])
+        y = self._get_y(lp)
 
         param_grid = FKGMiniProject.param_grids[self.model_name]
         clf = self._optimize_hyperparameters(X, y, param_grid)
         print('F1-Score: ', clf.best_score_)
 
     def fit_and_predict(self, lp):
-        X, y = self._get_X_y_from_lp(lp)
+        pos_and_neg = lp['pos'] + lp['neg']
+        X = self._get_X(pos_and_neg)
+        y = self._get_y(lp)
 
         if self.hyp_optim:
             param_grid = FKGMiniProject.param_grids[self.model_name]
             clf = self._optimize_hyperparameters(X, y, param_grid)
             model = clf.best_estimator_
         else:
-            model = self.fit(X, y)
+            model = self.classifier.fit(X, y)
 
-        # Complete: Find remaining individuals and predict
-
-        instances = set()
-        for c in self.onto.classes():
-            # print(f"\t {c.name}")
-            instances.update(c.instances(world=self.onto.world))
-
-        print('Total instances: ' + str(len(instances)))
-
-        instances = {str(instance).replace('carcinogenesis.', '') for instance in instances}
-        lp_instance_set = set(lp['pos'] + lp['neg'])
-        print('Total instances in LP ' + lp['lp'] + ': ' + str(len(lp_instance_set)))
-
-        test_instances = instances - lp_instance_set
-        print('Test instances for LP ' + lp['lp'] + ': ' + str(len(test_instances)))
-
-        test_instances = list(test_instances)
-        X_test = self._get_X_from_lp_test(test_instances)
-        y_test = self.predict(X_test)
+        test_instances = [inst for inst in self.all_instances if inst not in pos_and_neg]
+        X_test = self._get_X(test_instances)
+        y_test = model.predict(X_test)
 
         return test_instances, y_test
 
-    def _get_X_from_lp_test(self, lp_test):
-        X = np.zeros((len(lp_test), len(self.embeddings.columns)))
+    def _get_X(self, instances):
+        return self.embeddings.loc[instances].to_numpy()
 
-        index = 0
-
-        for inst in lp_test:
-            X[index] = self.embeddings.loc[str(FKGMiniProject.NS_CAR) + inst]
-            index += 1
-
-        return X
-
-    def _get_X_y_from_lp(self, lp):
-        X = np.zeros((len(lp['pos']) + len(lp['neg']), len(self.embeddings.columns)))
+    def _get_y(self, lp):
         y = np.zeros(len(lp['pos']) + len(lp['neg']), dtype=int)
-
-        index = 0
-
-        for pos_inst in lp['pos']:
-            X[index] = self.embeddings.loc[str(FKGMiniProject.NS_CAR) + pos_inst]
-            y[index] = 1
-            index += 1
-
-        for neg_inst in lp['neg']:
-            X[index] = self.embeddings.loc[str(FKGMiniProject.NS_CAR) + neg_inst]
-            y[index] = 0
-            index += 1
-
-        return X, y
+        y[:len(lp['pos'])] = 1
+        return y
 
     def _optimize_hyperparameters(self, X, y, param_grid, cv=10):
         clf = GridSearchCV(self.classifier,
@@ -177,47 +159,3 @@ class FKGMiniProject:
                    URIRef(FKGMiniProject.NS_CAR + n)))
 
         g.serialize(destination=lp_name + "_"+ result_file, format='turtle')
-
-    def __select_classifier(self):
-        if self.model_name == 'LR':
-            classifier = LogisticRegression(class_weight='balanced')
-        elif self.model_name == 'SVM':
-            classifier = SVC(class_weight='balanced')
-        elif self.model_name == 'RandomForest':
-            classifier = RandomForestClassifier(class_weight='balanced')
-        elif self.model_name == 'kNN':
-            classifier = KNeighborsClassifier()
-        elif self.model_name == 'MLP':
-            classifier = MLPClassifier()
-        elif self.model_name == 'Perceptron':
-            classifier = Perceptron(class_weight='balanced')
-        else:
-            raise ValueError
-        return classifier
-
-    def log_ontology(self):
-        print("#"*50)
-        print(f"Number classes: {len(list(self.onto.classes()))}")
-        instances = set()
-        for c in self.onto.classes():
-            print(f"\t {c.name}")
-            instances.update(c.instances(world=self.onto.world))
-        # print(str(list(instances)[0]).replace('carcinogenesis.', ''))
-        print(f"Number object properties: {len(list(self.onto.object_properties()))}")
-        for p in self.onto.object_properties():
-            print(f"\t {p.name}")
-        print(f"Number data properties: {len(list(self.onto.data_properties()))}")
-        for p in self.onto.data_properties():
-            print(f"\t {p.name}")
-        print(f"Number individuals: {len(instances)}")
-        print("#"*50)
-
-    def log_lps(self):
-        print("#"*50)
-        print(f"Number LPs: {len(self.lps)}")
-        for lp in self.lps:
-            print(f"LP ({lp['lp']}): PositiveEX - {len(lp['pos'])} \
-                    | NegativeEX - {len(lp['neg'])} \
-                    | TotalEX - {len(lp['pos']) + len(lp['neg'])}")
-        print("#"*50)
-
