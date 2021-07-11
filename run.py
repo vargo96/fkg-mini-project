@@ -1,5 +1,13 @@
 import argparse
+import tqdm
 from fkg_mini_project import FKGMiniProject
+from rdflib import Namespace, Graph, Literal, URIRef
+
+
+NS_CAR = Namespace("http://dl-learner.org/carcinogenesis#")
+NS_RES = Namespace("https://lpbenchgen.org/resource/")
+NS_PROP = Namespace("https://lpbenchgen.org/property/")
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -28,37 +36,64 @@ def parse_lps(lps_path):
             elif line.strip().startswith("lpprop:excludesResource"):
                 exclude_resource_list = line.strip()[23:].split(",")
                 exclude_resource_list = [individual.replace(";", "")
-                                         .replace("carcinogenesis:", 
-                                                  "http://dl-learner.org/carcinogenesis#").strip()
-                                        for individual in exclude_resource_list]
+                                                   .replace("carcinogenesis:",
+                                                  "         http://dl-learner.org/carcinogenesis#").strip()
+                        for individual in exclude_resource_list]
             elif line.strip().startswith("lpprop:includesResource"):
                 include_resource_list = line.strip()[23:].split(",")
                 include_resource_list = [individual.replace(".", "")
-                                         .replace("carcinogenesis:", 
-                                                  "http://dl-learner.org/carcinogenesis#").strip()
-                                        for individual in include_resource_list]
-                lp_instance_list.append({"lp": lp_key,
+                                                   .replace("carcinogenesis:",
+                                                            "http://dl-learner.org/carcinogenesis#").strip()
+                        for individual in include_resource_list]
+                lp_instance_list.append({"name": lp_key,
                                          "pos": include_resource_list,
                                          "neg": exclude_resource_list})
 
     return lp_instance_list
 
 
+def add_lp_to_graph(graph, lp_name, pos, neg, index):
+    current_pos = f'result_{index}pos'
+    current_neg = f'result_{index}neg'
+    graph.add((URIRef(NS_RES + current_pos), NS_PROP.belongsToLP, Literal(True)))
+    graph.add((URIRef(NS_RES + current_pos), NS_PROP.pertainsTo, URIRef(NS_RES + lp_name)))
+
+    for p in pos:
+        graph.add((URIRef(NS_RES + current_pos), NS_PROP.resource, URIRef(p)))
+
+    graph.add((URIRef(NS_RES + current_neg), NS_PROP.belongsToLP, Literal(False)))
+    graph.add((URIRef(NS_RES + current_neg), NS_PROP.pertainsTo, URIRef(NS_RES + lp_name)))
+
+    for n in neg:
+        graph.add((URIRef(NS_RES + current_neg), NS_PROP.resource, URIRef(n)))
+
+
 def run(args):
     lps = parse_lps(args.lps_path)
 
     project = FKGMiniProject(args.ontology_path,
-                              args.embeddings_path,
-                              model_name=args.classifier,
-                              hyp_optim=args.hyper_optim)
+                             args.embeddings_path,
+                             model_name=args.classifier,
+                             hyp_optim=args.hyper_optim)
 
 
-    # TODO: Loop through lps and write the result file
-    lp = lps[23]
     if args.train_mode:
+        lp = lps[23]
         project.fit_and_evaluate(lp)
     else:
-        test_instances, y_test = project.fit_and_predict(lp)
+        g = Graph()
+        g.bind('carcinogenesis', NS_CAR)
+        g.bind('lpres', NS_RES)
+        g.bind('lpprop', NS_PROP)
+
+        progress_bar = tqdm.tqdm(total=len(lps), leave=False)
+        for idx, lp in enumerate(lps):
+            pos, neg = project.fit_and_predict(lp)
+            add_lp_to_graph(g, lp['name'], pos, neg, idx+1)
+            progress_bar.update(1)
+        progress_bar.close()
+
+        g.serialize(destination='result.ttl', format='turtle')
 
 if __name__ == '__main__':
     run(parse_args())

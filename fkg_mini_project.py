@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
-from owlready2 import World, Thing
-from rdflib import Namespace, Graph, Literal, URIRef
+from owlready2 import World
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression, Perceptron
@@ -42,10 +41,6 @@ class FKGMiniProject:
         }
     }
 
-    NS_CAR = Namespace("http://dl-learner.org/carcinogenesis#")
-    NS_RES = Namespace("https://lpbenchgen.org/resource/")
-    NS_PROP = Namespace("https://lpbenchgen.org/property/")
-
 
     def __init__(self,
                  ontology_path,
@@ -61,17 +56,17 @@ class FKGMiniProject:
 
     def __select_classifier(self):
         if self.model_name == 'LR':
-            classifier = LogisticRegression(class_weight='balanced')
+            classifier = LogisticRegression()
         elif self.model_name == 'SVM':
-            classifier = SVC(class_weight='balanced')
+            classifier = SVC()
         elif self.model_name == 'RandomForest':
-            classifier = RandomForestClassifier(class_weight='balanced')
+            classifier = RandomForestClassifier()
         elif self.model_name == 'kNN':
             classifier = KNeighborsClassifier()
         elif self.model_name == 'MLP':
             classifier = MLPClassifier()
         elif self.model_name == 'Perceptron':
-            classifier = Perceptron(class_weight='balanced')
+            classifier = Perceptron()
         else:
             raise ValueError
         return classifier
@@ -106,7 +101,15 @@ class FKGMiniProject:
         X_test = self._get_X(test_instances)
         y_test = model.predict(X_test)
 
-        return test_instances, y_test
+        pos_classified = []
+        neg_classified = []
+        for ind, flag in zip(test_instances, y_test):
+            if flag:
+                pos_classified.append(ind)
+            else:
+                neg_classified.append(ind)
+
+        return pos_classified, neg_classified
 
     def _get_X(self, instances):
         return self.embeddings.loc[instances].to_numpy()
@@ -126,36 +129,3 @@ class FKGMiniProject:
 
         print(self.model_name + " best params:" + str(clf.best_params_))
         return clf
-
-    # TODO: Update to write all lps to same file
-    def write_result_file(self, lp_name, pos, neg, result_file="result.ttl"):
-        g = Graph()
-        g.bind('carcinogenesis', FKGMiniProject.NS_CAR)
-        g.bind('lpres', FKGMiniProject.NS_RES)
-        g.bind('lpprop', FKGMiniProject.NS_PROP)
-
-        g.add((FKGMiniProject.NS_RES.result_1pos,
-               FKGMiniProject.NS_PROP.belongsToLP,
-               Literal(True)))
-        g.add((FKGMiniProject.NS_RES.result_1pos,
-               FKGMiniProject.NS_PROP.pertainsTo,
-               URIRef(FKGMiniProject.NS_RES + lp_name)))
-
-        for p in pos:
-            g.add((FKGMiniProject.NS_RES.result_1pos,
-                   FKGMiniProject.NS_PROP.resource,
-                   URIRef(FKGMiniProject.NS_CAR + p)))
-
-        g.add((FKGMiniProject.NS_RES.result_1neg,
-               FKGMiniProject.NS_PROP.belongsToLP,
-               Literal(False)))
-        g.add((FKGMiniProject.NS_RES.result_1neg,
-               FKGMiniProject.NS_PROP.pertainsTo,
-               URIRef(FKGMiniProject.NS_RES + lp_name)))
-
-        for n in neg:
-            g.add((FKGMiniProject.NS_RES.result_1neg,
-                   FKGMiniProject.NS_PROP.resource,
-                   URIRef(FKGMiniProject.NS_CAR + n)))
-
-        g.serialize(destination=lp_name + "_"+ result_file, format='turtle')
