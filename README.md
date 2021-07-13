@@ -1,4 +1,10 @@
-# FKG - Mini Project
+# Foundations of Knowledge Graphs Mini-Project (Group Name: The Pythonistas)
+
+## Group Members (IMT usernames in brackets)
+
+1. Lukas Blübaum (lukasbl)
+2. Varun Nandkumar Golani (vngolani)
+3. Shivam Sharma (sshivam)
 
 ## Motivation 
 
