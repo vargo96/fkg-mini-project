@@ -2,41 +2,42 @@
 
 ## Motivation 
 
-Machine Learning (ML) algorithms need features to classify the instances. 
-Data is stored in Knowledge Graphs (KG) in the form of triples. 
-To apply ML algorithms on KG, we need to convert these triples into features. 
-This is where KG embedding comes into picture. 
-KG embedding gives us a low dimensional vector representation of the entities and relations in the KG.
-For each learning problem, the individuals are converted into vector representations using KG embeddings and these embedded instances can be fed as an input to ML algorithms and new instances can be predicted by using these trained ML algorithms.
+Machine Learning (ML) algorithms need data in the form of feature vectors and class labels to come up with a trained model and predict new instances with that trained model. 
+Data stored in Knowledge Graph(s) (KG) is in the form of triples. 
+To apply ML algorithms on KG, we need to convert the individuals in the learning problem into feature vectors. 
+One way to tackle this task is to use KG embedding. 
+KG embedding gives us a low dimensional vector representation of the entities and the relations in the KG.
+For a learning problem, the individuals are converted into vector representations using KG embeddings and these embedded individuals can be fed as an input to ML algorithms and unlabeled individuals can be predicted by using these trained ML algorithms.
 
 ## Approach 
 
-1. **Parsing the input turtle file:**
-   
-    To extract all the postive and negative individuals for each learning problem, the input turtle file is parsed.
+Our approach consists of the five steps and these are as follows:
+
+1. **Parse the input turtle file:**
+    
+    In this step, we parse the input turtle file (i.e. kg-mini-project-train_v2.ttl or kg-mini-project-grading.ttl) and the output contains the set of positive and negative individuals for all learning problems.
    
 
 2. **Train KG embedding models:**
    
-   Five embedding models (namely TransE, DistMult, RotatE, ConvE, ComplEx) can be trained on the triples obtained from the carcinogenesis ontology. The output of the KG embedding is a CSV file containing vector representations of entities and relations.
+   Five embedding models (namely TransE, DistMult, RotatE, ConvE, ComplEx) can be trained on the triples obtained from the ontology. The output of the KG embedding is a CSV file containing vector representations of entities and relations.
    
 
-3. **Conversion of input individuals into vector representations:**
+3. **Convert input individuals into vector representations:**
    
-    After training the KG embedding models, the postive and negative individuals for each learning problem are converted into X and y arrays.
-   
-
-4. **Classifier Training and Hyperparameter Optimization:**
-   
-    Six classifiers (namely LR, SVM, RandomForest, kNN, MLP and Perceptron) can be used on the embedded training data (X, y).
-    To do hyperparameter optimization, we created an experiment of 10-fold cross-validation.
-   The best set of hyperparameters is obtained on the embedded training data and the classifier using those parameters is used in the next step, i.e., Prediction.
+    After training the KG embedding models, the positive and negative individuals for each learning problem are converted into feature vectors and class labels.
    
 
-5. **Prediction and writing the result file:**
+4. **Train classifiers and optimize hyperparameters:**
+   
+   Six classifiers (namely LR, SVM, RandomForest, kNN, MLP and Perceptron) can be used on the embedded training data (output data from Step 3).
+   The best set of hyperparameters is obtained on the embedded training data and the chosen classifier using those parameters is used for prediction (Step 5).
+   
+
+5. **Predict and write the result file:**
 
    The remaining test individuals are converted into vector representations and given as an input to the chosen classifier. 
-   We receive the predictions of all the individuals for each learning problem and the prediction results are written in a single turtle (link: result.ttl) file.
+   We receive the predictions of all the individuals for each learning problem and the prediction results are written in a single turtle [result](result.ttl) file.
 
 ## Installation
 Clone the repository:
