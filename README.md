@@ -64,7 +64,7 @@ Then run:
 pip install -r requirements.txt
 ```
 
-## Reproduce result ttl file:
+## Reproduce result ttl file
 To reproduce the ```result.ttl``` with the predictions for the remaining individual for each learning problem run:
 ```
 python run.py
