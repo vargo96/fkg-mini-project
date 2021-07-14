@@ -1,6 +1,6 @@
 # Foundations of Knowledge Graphs Mini-Project (Group Name: The Pythonistas)
 
-## Group Members (IMT usernames in brackets)
+## Group Members
 
 1. Lukas Blübaum
 2. Varun Nandkumar Golani
