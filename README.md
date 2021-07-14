@@ -2,9 +2,9 @@
 
 ## Group Members (IMT usernames in brackets)
 
-1. Lukas Blübaum (lukasbl)
-2. Varun Nandkumar Golani (vngolani)
-3. Shivam Sharma (sshivam)
+1. Lukas Blübaum
+2. Varun Nandkumar Golani
+3. Shivam Sharma
 
 ## Motivation 
 
